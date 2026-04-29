@@ -13,11 +13,23 @@ def extract_pdf_text(pdf_path: Path, max_chars: int = 12000) -> str:
     Extract a text snippet from a PDF (best-effort).
     Tries PyMuPDF first; falls back to pypdf.
     """
+    # The two `range(doc.page_count)` / `range(len(reader.pages))` loops
+    # below previously capped at `min(5, ...)`, but real academic books open
+    # with 3-5 pages of low-density front matter (title page, copyright,
+    # dedication, TOC start). A 595-page textbook can yield fewer than 2000
+    # characters from its first 5 pages, which then trips the 5000-char
+    # validation gate in democritus_agentic._run_document_intake_agent and
+    # causes the whole route to fail on legitimate documents. The hard
+    # 5-page cap has been removed: the real runtime bound is `max_chars`
+    # (default 12000), and the loop now walks the document until that many
+    # characters have accumulated or pages run out. Snippet semantics are
+    # unchanged because `max_chars` still caps output at 12000 by default;
+    # we have simply stopped under-sampling.
     text = ""
     try:
         import fitz  # PyMuPDF
         doc = fitz.open(str(pdf_path))
-        for i in range(min(5, doc.page_count)):
+        for i in range(doc.page_count):
             text += doc.load_page(i).get_text("text") + "\n"
             if len(text) >= max_chars:
                 break
@@ -26,7 +38,7 @@ def extract_pdf_text(pdf_path: Path, max_chars: int = 12000) -> str:
         try:
             from pypdf import PdfReader
             reader = PdfReader(str(pdf_path))
-            for i in range(min(5, len(reader.pages))):
+            for i in range(len(reader.pages)):
                 text += (reader.pages[i].extract_text() or "") + "\n"
                 if len(text) >= max_chars:
                     break

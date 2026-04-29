@@ -19,6 +19,16 @@ This module:
 
 from __future__ import annotations
 
+import sys
+
+# Force UTF-8 on stdout/stderr. Diagnostic prints in this module use Unicode
+# glyphs (e.g. "→"), but Python on Windows defaults stdout to cp1252 and
+# raises UnicodeEncodeError on any non-latin-1 character, crashing the
+# subprocess. Reconfiguring here is a single-point fix rather than editing
+# every print site. Must run before any print, so it lives at the top.
+sys.stdout.reconfigure(encoding="utf-8")
+sys.stderr.reconfigure(encoding="utf-8")
+
 import json
 import pickle
 from tqdm import tqdm

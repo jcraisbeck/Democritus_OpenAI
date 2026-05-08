@@ -61,6 +61,9 @@ def parse_args():
     ap.add_argument("--outdir", required=True, help="Output directory for this run (all artifacts written here)")
     ap.add_argument("--domain-name", default="topics", help="Domain name used in viz titles / topos slice metadata")
     ap.add_argument("--topics-file", default="configs/root_topics.txt", help="Root topics file")
+    ap.add_argument("--quotient", action="store_true",
+                    help="Apply the indiscernibility quotient (Module 4.5) between Modules 4 and 5. "
+                         "All knobs in configs/quotient_config.py.")
     return ap.parse_args()
 
 
@@ -104,6 +107,31 @@ def main():
         banner("STEP 4: Extracting relational triples (Module 4)")
         with timed_step("Module 4: Relational triples"):
             extract_triples()
+
+        # OPTIONAL Step 4.5: indiscernibility quotient. Inert when
+        # --quotient is omitted; the entire conditional block is the
+        # only behavioral change vs. the previous orchestrator.
+        if args.quotient:
+            banner("STEP 4.5: Indiscernibility quotient")
+            with timed_step("Module 4.5: Indiscernibility quotient"):
+                from scripts import indiscernibility_quotient
+                from configs.quotient_config import CONFIG as QUOTIENT_CONFIG
+
+                indiscernibility_quotient.main()
+
+                # File swap so untouched Module 5 reads the quotiented
+                # triples. Original Module 4 output is preserved at
+                # raw_backup_name for provenance and reporting.
+                Path(QUOTIENT_CONFIG["input_filename"]).rename(
+                    QUOTIENT_CONFIG["raw_backup_name"]
+                )
+                Path(QUOTIENT_CONFIG["output_filename"]).rename(
+                    QUOTIENT_CONFIG["input_filename"]
+                )
+                # Drop any stale graph-layer pickle so Module 5
+                # rebuilds from the (now quotiented) triples file
+                # via its fallback path.
+                Path("relational_state.pkl").unlink(missing_ok=True)
 
         banner("STEP 5: Building relational manifold (Module 5)")
         with timed_step("Module 5: Relational manifold"):

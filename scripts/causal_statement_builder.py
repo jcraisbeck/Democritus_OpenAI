@@ -30,6 +30,11 @@ from typing import List, Dict, Any, Optional, Union
 
 from tqdm import tqdm
 from llms.factory import make_llm_client
+from scripts.causal_verbs import (
+    causal_keywords,
+    prompt_verb_fragment,
+    verb_stopwords,
+)
 
 # ---------------------------------------------------------------------
 # Config
@@ -45,21 +50,14 @@ STATEMENT_TOKEN_STOPWORDS = {
     "about",
     "across",
     "after",
-    "affects",
     "because",
     "between",
     "causal",
-    "cause",
-    "causes",
     "effects",
     "from",
     "given",
-    "increases",
-    "influences",
-    "leads",
     "question",
     "questions",
-    "reduces",
     "statement",
     "statements",
     "that",
@@ -70,7 +68,7 @@ STATEMENT_TOKEN_STOPWORDS = {
     "which",
     "with",
     "write",
-}
+} | verb_stopwords()
 
 STATEMENT_META_TOKENS = {
     "discovery",
@@ -105,7 +103,7 @@ Document causal guide:
 Each statement must:
 - be a declarative sentence,
 - describe a cause and an effect,
-- contain one of the words: causes, leads to, increases, reduces, affects, influences,
+- contain one of the words: {causal_verbs},
 - be scientifically meaningful.
 - stay close to the document's main causal story, mechanisms, actors, and outcomes.
 - prefer concrete entities or processes from the topic path and guide.
@@ -146,19 +144,13 @@ def build_prompt(question: str, n: int = N_STMTS, path: Optional[List[str]] = No
         question=question,
         path=" → ".join(path or []),
         document_guide=document_guide,
+        causal_verbs=prompt_verb_fragment(),
     )
 
 
 import re
 
-CAUSAL_KEYWORDS = [
-    "cause", "causes", "caused",
-    "lead to", "leads to", "led to",
-    "increase", "increases", "increased",
-    "reduce", "reduces", "reduced",
-    "affect", "affects", "affected",
-    "influence", "influences", "influenced",
-]
+CAUSAL_KEYWORDS = list(causal_keywords())
 
 BAD_PHRASES = [
     "use the following", "format", "this question", "the question",

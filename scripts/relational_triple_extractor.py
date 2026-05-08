@@ -26,26 +26,11 @@ import re
 from pathlib import Path
 from tqdm import tqdm
 
+from scripts.causal_verbs import rel_patterns
+
 
 INPUT_PATH = Path("causal_statements.jsonl")
 OUTPUT_PATH = Path("relational_triples.jsonl")
-
-# Regex patterns for relation detection
-REL_PATTERNS = {
-    "causes": r"(.+?)\s+causes\s+(.+)",
-    "leads_to": r"(.+?)\s+leads to\s+(.+)",
-    "increases": r"(.+?)\s+increases\s+(.+)",
-    "reduces": r"(.+?)\s+reduces\s+(.+)",
-    "affects": r"(.+?)\s+affects\s+(.+)",
-    "influences": r"(.+?)\s+influences\s+(.+)",
-    "shapes": r"(.+?)\s+shapes\s+(.+)",
-    "contributes_to": r"(.+?)\s+contributes to\s+(.+)",
-    "correlates_with": r"(.+?)\s+correlates with\s+(.+)",
-    "is_associated_with": r"(.+?)\s+is associated with\s+(.+)",
-}
-
-
-import re
 
 # patterns to skip entirely
 INSTRUCTION_PHRASES = [
@@ -75,19 +60,7 @@ def clean_text(t: str) -> str:
     return t.strip().strip(BAD_CHARS).strip()
 
 
-# Regex patterns for relation detection
-REL_PATTERNS = {
-    "causes": r"(.+?)\s+causes\s+(.+)",
-    "leads_to": r"(.+?)\s+leads to\s+(.+)",
-    "increases": r"(.+?)\s+increases\s+(.+)",
-    "reduces": r"(.+?)\s+reduces\s+(.+)",
-    "affects": r"(.+?)\s+affects\s+(.+)",
-    "influences": r"(.+?)\s+influences\s+(.+)",
-    "shapes": r"(.+?)\s+shapes\s+(.+)",
-    "contributes_to": r"(.+?)\s+contributes to\s+(.+)",
-    "correlates_with": r"(.+?)\s+correlates with\s+(.+)",
-    "is_associated_with": r"(.+?)\s+is associated with\s+(.+)",
-}
+REL_PATTERNS = rel_patterns()
 
 def extract_triple(statement: str):
     """Return (subj, rel, obj) or None, with aggressive filtering of question-like junk."""

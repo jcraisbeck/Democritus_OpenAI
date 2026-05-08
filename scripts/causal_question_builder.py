@@ -28,6 +28,7 @@ import re
 
 from tqdm import tqdm
 from llms.factory import make_llm_client
+from scripts.causal_verbs import prompt_verb_fragment, verb_stopwords
 
 # ---------------------------------------------------------------------
 # Config
@@ -46,19 +47,12 @@ QUESTION_TOKEN_STOPWORDS = {
     "among",
     "because",
     "between",
-    "cause",
-    "causes",
     "effects",
     "from",
     "how",
-    "increases",
-    "influences",
     "into",
-    "lead",
-    "leads",
     "question",
     "questions",
-    "reduces",
     "that",
     "them",
     "this",
@@ -68,7 +62,7 @@ QUESTION_TOKEN_STOPWORDS = {
     "while",
     "with",
     "would",
-}
+} | verb_stopwords()
 
 QUESTION_META_TOKENS = {
     "discovery",
@@ -167,7 +161,7 @@ Generate {N_QUESTIONS_PER_TOPIC} **distinct** causal questions about:
 Rules:
 - One question per line
 - Each question must contain a causal verb
-  (causes, affects, influences, leads to, reduces, increases)
+  ({prompt_verb_fragment()})
 - Keep the questions close to the document's main causal story, mechanisms, actors, and outcomes.
 - Prefer concrete causal questions about the entities or processes in the topic path.
 - Avoid meta questions about significance, understanding, scientific theories, or why a discovery matters unless that is the article's central causal claim.

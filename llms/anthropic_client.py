@@ -266,6 +266,19 @@ class AnthropicChatClient:
                     f"Anthropic request failed with HTTP {exc.code} for model "
                     f"{self.model!r} (prompt chars={len(prompt)}): {detail}"
                 ) from exc
+            except TimeoutError as exc:
+                # SSL / socket read timeouts on long-running calls. Same
+                # exponential-backoff schedule as the 429 path; raise on
+                # exhaustion so the caller sees a clear failure.
+                if attempt < self.max_retries:
+                    delay = self.retry_base_delay * (2 ** attempt)
+                    time.sleep(delay)
+                    continue
+                raise RuntimeError(
+                    f"Anthropic request timed out after {self.max_retries + 1} "
+                    f"attempts for model {self.model!r} (prompt chars="
+                    f"{len(prompt)}, per-attempt timeout={self.timeout}s)"
+                ) from exc
 
         # Anthropic returns a list of typed content blocks; concatenate the text ones.
         content_blocks = body["content"]
